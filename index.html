@@ -114,7 +114,8 @@
         }
 
         #content-cadernos.focus-mode #cadernos-editor-panel {
-            width: 100%; /* O painel do editor ocupa toda a largura */
+            width: 100%;
+            flex-grow: 1; /* Força o painel do editor a crescer e ocupar o espaço vertical */
         }
         #cadernos-dropdown-menu {
             position: absolute;
@@ -200,7 +201,7 @@
                     <span class="text-label group-[.sidebar-collapsed]:hidden">Plano de Estudos</span>
                 </button>
                 <button data-tab-id="cadernos" class="sidebar-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-base group-[.sidebar-collapsed]:justify-center transition-colors duration-200">
-                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <span class="text-label group-[.sidebar-collapsed]:hidden">Cadernos</span>
                 </button>
                 <button data-tab-id="syllabus-editor" class="sidebar-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-base group-[.sidebar-collapsed]:justify-center transition-colors duration-200">
@@ -267,7 +268,7 @@
             </div>
 
             <!-- Content Panels -->
-            <div id="main-content">
+            <div id="main-content" class="h-full">
                 <div id="content-planner" class="hidden">
                     <div id="planner-toolbar" class="flex flex-wrap items-center justify-between gap-y-4 gap-x-6 mb-6 p-4 bg-white dark:bg-slate-800 rounded-lg shadow-md">
     
