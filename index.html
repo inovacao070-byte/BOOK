@@ -2673,23 +2673,25 @@ achievementsConfig: {
 
                         const { command, level, align } = button.dataset;
 
-                        const commands = {
-                            toggleBold: () => editor.chain().focus().toggleBold().run(),
-                            toggleItalic: () => editor.chain().focus().toggleItalic().run(),
-                            toggleUnderline: () => editor.chain().focus().toggleUnderline().run(),
-                            toggleHeading: () => editor.chain().focus().toggleHeading({ level: parseInt(level) }).run(),
-                            toggleBulletList: () => editor.chain().focus().toggleBulletList().run(),
-                            toggleOrderedList: () => editor.chain().focus().toggleOrderedList().run(),
-                            setTextAlign: () => editor.chain().focus().setTextAlign(align).run(),
-                        };
-
-                        if (commands[command]) {
-                            commands[command]();
+                        if (command === 'toggleBold') {
+                            editor.chain().focus().toggleBold().run();
+                        } else if (command === 'toggleItalic') {
+                            editor.chain().focus().toggleItalic().run();
+                        } else if (command === 'toggleUnderline') {
+                            editor.chain().focus().toggleUnderline().run();
+                        } else if (command === 'toggleHeading') {
+                            editor.chain().focus().toggleHeading({ level: parseInt(level) }).run();
+                        } else if (command === 'toggleBulletList') {
+                            editor.chain().focus().toggleBulletList().run();
+                        } else if (command === 'toggleOrderedList') {
+                            editor.chain().focus().toggleOrderedList().run();
+                        } else if (command === 'setTextAlign') {
+                            editor.chain().focus().setTextAlign(align).run();
                         }
                     });
 
                     // 6. Update toolbar state on selection change
-                    editor.on('transaction', () => {
+                    const updateToolbar = () => {
                         toolbar.querySelectorAll('button').forEach(button => {
                             const { command, level, align } = button.dataset;
                             let isActive = false;
@@ -2703,7 +2705,10 @@ achievementsConfig: {
 
                             button.classList.toggle('is-active', isActive);
                         });
-                    });
+                    };
+
+                    editor.on('transaction', updateToolbar);
+                    editor.on('selectionUpdate', updateToolbar);
 
                     return editor; // Return the instance in case it needs to be destroyed later
                 },
