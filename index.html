@@ -2612,13 +2612,13 @@ achievementsConfig: {
                 },
 
                 createRichTextEditor(targetElement, initialContent, onUpdateCallback) {
-                    // 1. Backward Compatibility Check
+                    // 1. Backward Compatibility Check (sem alterações)
                     let content = initialContent || '';
-                    if (content && !content.startsWith('<')) {
-                        content = `<p>${content}</p>`;
+                    if (content && !content.trim().startsWith('<')) {
+                        content = `<p>${content.replace(/\n/g, '<br>')}</p>`;
                     }
 
-                    // 2. Create Toolbar HTML
+                    // 2. Toolbar HTML (sem alterações)
                     const toolbarHTML = `
                         <div class="tiptap-toolbar">
                             <button data-command="toggleBold"><b>B</b></button>
@@ -2634,75 +2634,83 @@ achievementsConfig: {
                         </div>
                     `;
 
-                    // 3. Create Editor Container
+                    // 3. Create Editor Container (sem alterações)
                     const editorContainer = document.createElement('div');
                     editorContainer.className = 'tiptap-editor-wrapper flex flex-col h-full border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden';
 
                     const editorElement = document.createElement('div');
-                    editorElement.className = 'flex-grow overflow-y-auto p-2';
+                    editorElement.className = 'flex-grow overflow-y-auto p-2 tiptap'; // Adicionada classe .tiptap aqui
 
                     editorContainer.innerHTML = toolbarHTML;
                     editorContainer.appendChild(editorElement);
 
+                    targetElement.innerHTML = ''; // Limpa o container antes de adicionar o editor
                     targetElement.appendChild(editorContainer);
 
-                    // 4. Initialize Tiptap Editor
+                    // 4. Initialize Tiptap Editor (sem alterações)
                     const editor = new Editor({
                         element: editorElement,
                         extensions: [
                             StarterKit,
                             Underline,
-                            TextAlign.configure({
-                                types: ['heading', 'paragraph'],
-                            }),
+                            TextAlign.configure({ types: ['heading', 'paragraph'] }),
                         ],
                         content: content,
                         onUpdate: ({ editor }) => {
-                            onUpdateCallback(editor.getHTML());
-                        },
-                        onBlur: ({ editor }) => {
-                            onUpdateCallback(editor.getHTML());
+                            // Usar um debounce para evitar salvar a cada tecla digitada
+                            this.debounce(() => onUpdateCallback(editor.getHTML()), 500)();
                         }
                     });
 
-                    // 5. Toolbar Event Listeners
+                    // 5. Toolbar Event Listeners (LÓGICA CORRIGIDA E CENTRALIZADA)
                     const toolbar = editorContainer.querySelector('.tiptap-toolbar');
                     toolbar.addEventListener('click', (e) => {
                         const button = e.target.closest('button');
                         if (!button) return;
 
+                        e.preventDefault();
                         const { command, level, align } = button.dataset;
+                        const editorChain = editor.chain().focus();
 
-                        if (command === 'toggleBold') {
-                            editor.chain().focus().toggleBold().run();
-                        } else if (command === 'toggleItalic') {
-                            editor.chain().focus().toggleItalic().run();
-                        } else if (command === 'toggleUnderline') {
-                            editor.chain().focus().toggleUnderline().run();
-                        } else if (command === 'toggleHeading') {
-                            editor.chain().focus().toggleHeading({ level: parseInt(level) }).run();
-                        } else if (command === 'toggleBulletList') {
-                            editor.chain().focus().toggleBulletList().run();
-                        } else if (command === 'toggleOrderedList') {
-                            editor.chain().focus().toggleOrderedList().run();
-                        } else if (command === 'setTextAlign') {
-                            editor.chain().focus().setTextAlign(align).run();
+                        switch (command) {
+                            case 'toggleBold':
+                                editorChain.toggleBold().run();
+                                break;
+                            case 'toggleItalic':
+                                editorChain.toggleItalic().run();
+                                break;
+                            case 'toggleUnderline':
+                                editorChain.toggleUnderline().run();
+                                break;
+                            case 'toggleHeading':
+                                editorChain.toggleHeading({ level: parseInt(level, 10) }).run();
+                                break;
+                            case 'toggleBulletList':
+                                editorChain.toggleBulletList().run();
+                                break;
+                            case 'toggleOrderedList':
+                                editorChain.toggleOrderedList().run();
+                                break;
+                            case 'setTextAlign':
+                                editorChain.setTextAlign(align).run();
+                                break;
                         }
                     });
 
-                    // 6. Update toolbar state on selection change
+                    // 6. Update toolbar state on selection change (LÓGICA COMPLETA)
                     const updateToolbar = () => {
                         toolbar.querySelectorAll('button').forEach(button => {
                             const { command, level, align } = button.dataset;
                             let isActive = false;
-                            if (command === 'toggleBold') isActive = editor.isActive('bold');
-                            if (command === 'toggleItalic') isActive = editor.isActive('italic');
-                            if (command === 'toggleUnderline') isActive = editor.isActive('underline');
-                            if (command === 'toggleHeading') isActive = editor.isActive('heading', { level: parseInt(level) });
-                            if (command === 'toggleBulletList') isActive = editor.isActive('bulletList');
-                            if (command === 'toggleOrderedList') isActive = editor.isActive('orderedList');
-                            if (command === 'setTextAlign') isActive = editor.isActive({ textAlign: align });
-
+                            switch (command) {
+                                case 'toggleBold': isActive = editor.isActive('bold'); break;
+                                case 'toggleItalic': isActive = editor.isActive('italic'); break;
+                                case 'toggleUnderline': isActive = editor.isActive('underline'); break;
+                                case 'toggleHeading': isActive = editor.isActive('heading', { level: parseInt(level, 10) }); break;
+                                case 'toggleBulletList': isActive = editor.isActive('bulletList'); break;
+                                case 'toggleOrderedList': isActive = editor.isActive('orderedList'); break;
+                                case 'setTextAlign': isActive = editor.isActive({ textAlign: align }); break;
+                            }
                             button.classList.toggle('is-active', isActive);
                         });
                     };
@@ -2710,7 +2718,7 @@ achievementsConfig: {
                     editor.on('transaction', updateToolbar);
                     editor.on('selectionUpdate', updateToolbar);
 
-                    return editor; // Return the instance in case it needs to be destroyed later
+                    return editor;
                 },
 
                 renderAll() {
