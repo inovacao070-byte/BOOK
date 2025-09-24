@@ -117,6 +117,38 @@
             width: 100%;
             flex-grow: 1; /* Força o painel do editor a crescer e ocupar o espaço vertical */
         }
+        .tiptap-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.5rem;
+            background-color: #f8fafc;
+        }
+        .dark .tiptap-toolbar {
+            border-bottom-color: #334155;
+            background-color: #1e293b;
+        }
+        .tiptap-toolbar button {
+            margin: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+        }
+        .tiptap-toolbar button.is-active {
+            background-color: #d1fae5; /* green-100 */
+            color: #065f46; /* green-800 */
+        }
+        .dark .tiptap-toolbar button.is-active {
+            background-color: #047857; /* green-700 */
+            color: #d1fae5; /* green-100 */
+        }
+        .tiptap {
+            padding: 0.5rem;
+        }
+        .tiptap:focus {
+            outline: none;
+        }
         #cadernos-dropdown-menu {
             position: absolute;
             right: 0;
@@ -340,6 +372,12 @@
     </div>
     
     <script type="module">
+        // Imports do Tiptap
+        import { Editor } from 'https://esm.sh/@tiptap/core';
+        import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
+        import Underline from 'https://esm.sh/@tiptap/extension-underline';
+        import TextAlign from 'https://esm.sh/@tiptap/extension-text-align';
+
         // Imports do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         // NOVO: Adicione 'connectFunctionsEmulator' para conectar ao servidor de teste local
@@ -1920,6 +1958,19 @@ achievementsConfig: {
                     const topicsHTML = sortedTopics.map(topic => this.renderTopicRow(subject, topic, topic.id === openTopicId)).join('');
                     this.renderModal(subject.name, `<div id="topic-list-container" class="divide-y divide-gray-200 dark:divide-slate-700">${topicsHTML}</div>`);
 
+                    // After the modal is rendered, initialize any RTEs inside it
+                    sortedTopics.forEach(topic => {
+                        if (topic.phase === 1) { // Only for topics in construction phase
+                            const rteContainer = this.el(`study-tools-rte-${topic.id}`);
+                            if (rteContainer) {
+                                this.createRichTextEditor(rteContainer, topic.notes, this.debounce((newContent) => {
+                                    topic.notes = newContent;
+                                    this.saveData();
+                                }, 500)); // Debounce saving to avoid too many writes
+                            }
+                        }
+                    });
+
                     if (openTopicId) {
                         const topicElement = this.el(`topic-row-${openTopicId}`);
                         if (topicElement) {
@@ -1944,7 +1995,7 @@ achievementsConfig: {
                                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" /></svg>
                                      </button>
                                 </div>
-                                <textarea class="summary-textarea min-h-[150px] dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200 dark:placeholder-gray-400" data-action="saveNote" data-subject-id="${subjectId}" data-topic-id="${topic.id}" placeholder="Suas anotações sobre o tópico...">${topic.notes || ''}</textarea>
+                                <div id="study-tools-rte-${topic.id}" class="mt-2 min-h-[250px]"></div>
                             </div>
                             <div class="bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg">
                                 <div class="flex items-center gap-2 mb-2">
@@ -2531,7 +2582,7 @@ achievementsConfig: {
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5"></path></svg>
                                 </button>
                             </div>
-                            <textarea id="caderno-notes-textarea" class="flex-grow w-full p-3 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg resize-none">${activeTopic.notes || ''}</textarea>
+                            <div id="rte-container" class="flex-grow h-full"></div>
                         `;
                     }
 
@@ -2551,16 +2602,110 @@ achievementsConfig: {
                         </div>
                     `;
 
-                    const textarea = this.el('caderno-notes-textarea');
-                    if (textarea) {
-                        textarea.addEventListener('blur', (e) => {
-                            const topic = this.findTopic(subjectId, activeTopicId);
-                            if (topic) {
-                                topic.notes = e.target.value;
-                                this.saveData();
-                            }
+                    if (activeTopic) {
+                        const rteContainer = this.el('rte-container');
+                        this.createRichTextEditor(rteContainer, activeTopic.notes, (newContent) => {
+                            activeTopic.notes = newContent;
+                            this.saveData();
                         });
                     }
+                },
+
+                createRichTextEditor(targetElement, initialContent, onUpdateCallback) {
+                    // 1. Backward Compatibility Check
+                    let content = initialContent || '';
+                    if (content && !content.startsWith('<')) {
+                        content = `<p>${content}</p>`;
+                    }
+
+                    // 2. Create Toolbar HTML
+                    const toolbarHTML = `
+                        <div class="tiptap-toolbar">
+                            <button data-command="toggleBold"><b>B</b></button>
+                            <button data-command="toggleItalic"><i>I</i></button>
+                            <button data-command="toggleUnderline"><u>U</u></button>
+                            <button data-command="toggleHeading" data-level="2">H2</button>
+                            <button data-command="toggleHeading" data-level="3">H3</button>
+                            <button data-command="toggleBulletList">●</button>
+                            <button data-command="toggleOrderedList">1.</button>
+                            <button data-command="setTextAlign" data-align="left">Left</button>
+                            <button data-command="setTextAlign" data-align="center">Center</button>
+                            <button data-command="setTextAlign" data-align="right">Right</button>
+                        </div>
+                    `;
+
+                    // 3. Create Editor Container
+                    const editorContainer = document.createElement('div');
+                    editorContainer.className = 'tiptap-editor-wrapper flex flex-col h-full border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden';
+
+                    const editorElement = document.createElement('div');
+                    editorElement.className = 'flex-grow overflow-y-auto p-2';
+
+                    editorContainer.innerHTML = toolbarHTML;
+                    editorContainer.appendChild(editorElement);
+
+                    targetElement.appendChild(editorContainer);
+
+                    // 4. Initialize Tiptap Editor
+                    const editor = new Editor({
+                        element: editorElement,
+                        extensions: [
+                            StarterKit,
+                            Underline,
+                            TextAlign.configure({
+                                types: ['heading', 'paragraph'],
+                            }),
+                        ],
+                        content: content,
+                        onUpdate: ({ editor }) => {
+                            onUpdateCallback(editor.getHTML());
+                        },
+                        onBlur: ({ editor }) => {
+                            onUpdateCallback(editor.getHTML());
+                        }
+                    });
+
+                    // 5. Toolbar Event Listeners
+                    const toolbar = editorContainer.querySelector('.tiptap-toolbar');
+                    toolbar.addEventListener('click', (e) => {
+                        const button = e.target.closest('button');
+                        if (!button) return;
+
+                        const { command, level, align } = button.dataset;
+
+                        const commands = {
+                            toggleBold: () => editor.chain().focus().toggleBold().run(),
+                            toggleItalic: () => editor.chain().focus().toggleItalic().run(),
+                            toggleUnderline: () => editor.chain().focus().toggleUnderline().run(),
+                            toggleHeading: () => editor.chain().focus().toggleHeading({ level: parseInt(level) }).run(),
+                            toggleBulletList: () => editor.chain().focus().toggleBulletList().run(),
+                            toggleOrderedList: () => editor.chain().focus().toggleOrderedList().run(),
+                            setTextAlign: () => editor.chain().focus().setTextAlign(align).run(),
+                        };
+
+                        if (commands[command]) {
+                            commands[command]();
+                        }
+                    });
+
+                    // 6. Update toolbar state on selection change
+                    editor.on('transaction', () => {
+                        toolbar.querySelectorAll('button').forEach(button => {
+                            const { command, level, align } = button.dataset;
+                            let isActive = false;
+                            if (command === 'toggleBold') isActive = editor.isActive('bold');
+                            if (command === 'toggleItalic') isActive = editor.isActive('italic');
+                            if (command === 'toggleUnderline') isActive = editor.isActive('underline');
+                            if (command === 'toggleHeading') isActive = editor.isActive('heading', { level: parseInt(level) });
+                            if (command === 'toggleBulletList') isActive = editor.isActive('bulletList');
+                            if (command === 'toggleOrderedList') isActive = editor.isActive('orderedList');
+                            if (command === 'setTextAlign') isActive = editor.isActive({ textAlign: align });
+
+                            button.classList.toggle('is-active', isActive);
+                        });
+                    });
+
+                    return editor; // Return the instance in case it needs to be destroyed later
                 },
 
                 renderAll() {
@@ -3000,7 +3145,7 @@ renderTopicAtomModal(subjectId, topicId) {
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" /></svg>
                     </button>
                 </h4>
-                <textarea class="summary-textarea w-full !min-h-[120px] dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200" data-action="saveNote" data-subject-id="${subjectId}" data-topic-id="${topic.id}" placeholder="Suas anotações sobre o tópico...">${topic.notes || ''}</textarea>
+                <div id="topic-atom-rte-${topic.id}" class="min-h-[200px]"></div>
             </div>
         `;
         
@@ -3033,6 +3178,14 @@ renderTopicAtomModal(subjectId, topicId) {
     // --- History Section (Full Width) ---
     const historyContainer = this.el('topic-atom-history-section');
     if (historyContainer) {
+            const rteContainer = this.el(`topic-atom-rte-${topic.id}`);
+            if (rteContainer) {
+                this.createRichTextEditor(rteContainer, topic.notes, this.debounce((newContent) => {
+                    topic.notes = newContent;
+                    this.saveData();
+                }, 500));
+            }
+
         const phaseHistoryHTML = this.phasesData.map((phaseData, index) => {
             const isAchieved = topic.phase >= phaseData.id;
             const classes = isAchieved 
