@@ -110,7 +110,18 @@
             color: #e2e8f0; /* slate-200 */
         }
         #content-cadernos.focus-mode #cadernos-topics-panel {
-            display: none;
+            display: none; /* O painel de tópicos some completamente */
+        }
+
+        #content-cadernos.focus-mode #cadernos-editor-panel {
+            width: 100%; /* O painel do editor ocupa toda a largura */
+            height: 100%; /* E toda a altura disponível */
+        }
+        #cadernos-dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            z-index: 20;
         }
     </style>
 </head>
@@ -2432,55 +2443,44 @@ achievementsConfig: {
                         return;
                     }
 
-                    // Create temporary elements to measure width
-                    const tempContainer = document.createElement('div');
-                    tempContainer.className = 'flex items-center absolute -top-96 -left-96';
-                    document.body.appendChild(tempContainer);
-
-                    const tabElements = subjects.map(subject => {
-                        const btn = document.createElement('button');
+                    // Render all tabs initially to measure them
+                    const allTabsHTML = subjects.map(subject => {
                         const isActive = subject.id === this.cadernosState.activeSubjectId;
-                        btn.className = `tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 whitespace-nowrap ${isActive ? 'active' : ''}`;
-                        btn.textContent = subject.name;
-                        btn.dataset.subjectId = subject.id;
-                        return btn;
-                    });
+                        return `<button class="tab-btn flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 whitespace-nowrap ${isActive ? 'active' : ''}" data-subject-id="${subject.id}">${subject.name}</button>`;
+                    }).join('');
 
-                    let visibleTabsHTML = '';
+                    container.innerHTML = `
+                        <div class="flex justify-between items-center w-full">
+                            <div id="visible-tabs-container" class="flex items-center overflow-hidden">
+                                ${allTabsHTML}
+                            </div>
+                            <div id="dropdown-container" class="relative flex-shrink-0"></div>
+                        </div>
+                    `;
+
+                    const visibleTabsContainer = this.el('visible-tabs-container');
+                    const dropdownContainer = this.el('dropdown-container');
                     const hiddenTabs = [];
-                    let currentWidth = 0;
-                    const containerWidth = container.offsetWidth;
-                    const dropdownButtonWidth = 80; // Approximate width for the "More" button
 
-                    tabElements.forEach(btn => {
-                        tempContainer.appendChild(btn);
-                        const tabWidth = btn.offsetWidth;
-                        if (currentWidth + tabWidth < containerWidth - dropdownButtonWidth) {
-                            currentWidth += tabWidth;
-                            visibleTabsHTML += btn.outerHTML;
-                        } else {
-                            hiddenTabs.push(subjects.find(s => s.id === btn.dataset.subjectId));
-                        }
-                        tempContainer.removeChild(btn);
-                    });
+                    // Move overflowing tabs to the hidden list
+                    while (visibleTabsContainer.scrollWidth > visibleTabsContainer.offsetWidth && visibleTabsContainer.children.length > 0) {
+                        const lastTab = visibleTabsContainer.lastElementChild;
+                        visibleTabsContainer.removeChild(lastTab);
+                        const subject = subjects.find(s => s.id === lastTab.dataset.subjectId);
+                        if(subject) hiddenTabs.unshift(subject); // Add to the beginning to maintain order
+                    }
 
-                    document.body.removeChild(tempContainer);
-
-                    let dropdownHTML = '';
+                    // If there are hidden tabs, render the dropdown
                     if (hiddenTabs.length > 0) {
-                        dropdownHTML = `
-                            <div class="relative">
-                                <button id="cadernos-dropdown-btn" class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
-                                    Mais ▾
-                                </button>
-                                <div id="cadernos-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-slate-700 rounded-md shadow-lg z-10">
-                                    ${hiddenTabs.map(subject => `<a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600" data-subject-id="${subject.id}">${subject.name}</a>`).join('')}
-                                </div>
+                        dropdownContainer.innerHTML = `
+                            <button id="cadernos-dropdown-btn" class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                                Mais ▾
+                            </button>
+                            <div id="cadernos-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-slate-700 rounded-md shadow-lg z-10">
+                                ${hiddenTabs.map(subject => `<a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600" data-subject-id="${subject.id}">${subject.name}</a>`).join('')}
                             </div>
                         `;
                     }
-
-                    container.innerHTML = `<div class="flex items-center overflow-x-auto">${visibleTabsHTML}${dropdownHTML}</div>`;
                 },
 
                 renderCadernoContent(subjectId) {
