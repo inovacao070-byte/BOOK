@@ -2443,49 +2443,55 @@ achievementsConfig: {
                         return;
                     }
 
-                    // Set the new HTML structure first
+                    // 1. Preparation
                     container.innerHTML = `
                         <div class="flex justify-between items-center w-full">
-                            <div id="visible-tabs-container" class="flex-grow flex items-center overflow-hidden whitespace-nowrap">
-                                <!-- Tabs will be populated here -->
-                            </div>
-                            <div id="dropdown-container" class="flex-shrink-0 relative">
-                                <!-- Dropdown will be populated here -->
+                            <div id="visible-tabs-container" class="flex-grow flex items-center overflow-hidden whitespace-nowrap"></div>
+                            <div id="dropdown-container" class="flex-shrink-0 relative hidden">
+                                <button id="cadernos-dropdown-btn" class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                                    Mais ▾
+                                </button>
+                                <div id="cadernos-dropdown-menu" class="hidden"></div>
                             </div>
                         </div>
                     `;
 
-                    const visibleTabsContainer = this.el('visible-tabs-container');
+                    const visibleContainer = this.el('visible-tabs-container');
                     const dropdownContainer = this.el('dropdown-container');
+                    const dropdownMenu = this.el('cadernos-dropdown-menu');
 
-                    // Render all tabs into the visible container to measure
-                    visibleTabsContainer.innerHTML = subjects.map(subject => {
+                    // 2. Initial Render
+                    subjects.forEach(subject => {
                         const isActive = subject.id === this.cadernosState.activeSubjectId;
-                        return `<button class="tab-btn flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 whitespace-nowrap ${isActive ? 'active' : ''}" data-subject-id="${subject.id}">${subject.name}</button>`;
-                    }).join('');
+                        const btn = document.createElement('button');
+                        btn.className = `tab-btn flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 whitespace-nowrap ${isActive ? 'active' : ''}`;
+                        btn.textContent = subject.name;
+                        btn.dataset.subjectId = subject.id;
+                        visibleContainer.appendChild(btn);
+                    });
 
-                    const hiddenTabs = [];
+                    // 3. Verification and Correction Loop
+                    while (visibleContainer.scrollWidth > visibleContainer.offsetWidth) {
+                        let lastVisibleTab = visibleContainer.lastElementChild;
+                        if (!lastVisibleTab) break;
 
-                    // Move overflowing tabs to the hidden list
-                    while (visibleTabsContainer.scrollWidth > visibleTabsContainer.offsetWidth && visibleTabsContainer.children.length > 0) {
-                        const lastTab = visibleTabsContainer.lastElementChild;
-                        visibleTabsContainer.removeChild(lastTab);
-                        const subject = subjects.find(s => s.id === lastTab.dataset.subjectId);
-                        if(subject) hiddenTabs.unshift(subject); // Add to the beginning to maintain order
+                        visibleContainer.removeChild(lastVisibleTab);
+
+                        // Re-create as an 'a' tag for the dropdown
+                        const link = document.createElement('a');
+                        link.href = '#';
+                        link.className = 'dropdown-item block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600';
+                        link.dataset.subjectId = lastVisibleTab.dataset.subjectId;
+                        link.textContent = lastVisibleTab.textContent;
+
+                        dropdownMenu.prepend(link);
                     }
 
-                    // If there are hidden tabs, render the dropdown
-                    if (hiddenTabs.length > 0) {
-                        dropdownContainer.innerHTML = `
-                            <button id="cadernos-dropdown-btn" class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
-                                Mais ▾
-                            </button>
-                            <div id="cadernos-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-slate-700 rounded-md shadow-lg z-10">
-                                ${hiddenTabs.map(subject => `<a href="#" class="dropdown-item block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-600" data-subject-id="${subject.id}">${subject.name}</a>`).join('')}
-                            </div>
-                        `;
-                    } else {
-                        dropdownContainer.innerHTML = ''; // Ensure dropdown is empty if not needed
+                    // 4. Conditional Dropdown Display
+                    if (dropdownMenu.children.length > 0) {
+                        dropdownContainer.classList.remove('hidden');
+                        // Add dropdown-specific classes now that we know it exists
+                        dropdownMenu.classList.add('absolute', 'right-0', 'mt-2', 'w-56', 'bg-white', 'dark:bg-slate-700', 'rounded-md', 'shadow-lg', 'z-20');
                     }
                 },
 
