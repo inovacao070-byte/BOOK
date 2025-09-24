@@ -89,6 +89,35 @@
         .dark .phase-step.future { background-color: #334155; color: #94a3b8; }
         .phase-step.achieved { color: white; }
         .phase-separator { color: #9ca3af; }
+
+        /* Estilos para a funcionalidade Cadernos */
+        #cadernos-subjects-panel .subject-item.active {
+            background-color: #e0f2f1; /* lighter teal */
+            border-right-width: 4px;
+            border-color: #14b8a6; /* teal-500 */
+            font-weight: 600;
+        }
+        .dark #cadernos-subjects-panel .subject-item.active {
+            background-color: #115e59; /* darker teal */
+        }
+        #cadernos-topics-list .topic-item.active {
+            background-color: #f0f9ff; /* sky-50 */
+        }
+        .dark #cadernos-topics-list .topic-item.active {
+            background-color: #1e293b; /* slate-800 */
+        }
+
+        #content-cadernos.cadernos-focus-mode #cadernos-subjects-panel {
+            display: none;
+        }
+        #content-cadernos.cadernos-focus-mode #cadernos-main-panel {
+            width: 100%;
+        }
+        #content-cadernos.cadernos-focus-mode #main-app-header,
+        #content-cadernos.cadernos-focus-mode #sidebar {
+            display: none;
+        }
+
     </style>
 </head>
 <body class="text-gray-800 dark:text-gray-200 transition-colors duration-300">
@@ -165,6 +194,10 @@
                 <button data-tab-id="study-plan" class="sidebar-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-base group-[.sidebar-collapsed]:justify-center transition-colors duration-200">
                     <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                     <span class="text-label group-[.sidebar-collapsed]:hidden">Plano de Estudos</span>
+                </button>
+                <button data-tab-id="cadernos" class="sidebar-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-base group-[.sidebar-collapsed]:justify-center transition-colors duration-200">
+                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <span class="text-label group-[.sidebar-collapsed]:hidden">Cadernos</span>
                 </button>
                 <button data-tab-id="syllabus-editor" class="sidebar-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-base group-[.sidebar-collapsed]:justify-center transition-colors duration-200">
                     <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
@@ -259,6 +292,7 @@
                 <div id="content-study-plan" class="hidden">
                     <div id="subjects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
+                <div id="content-cadernos" class="hidden h-full flex flex-col"></div>
                 <div id="content-syllabus-editor" class="hidden"></div>
                 <div id="content-dashboard" class="hidden"></div>
                 <div id="content-progress" class="hidden"></div>
@@ -1078,6 +1112,7 @@ achievementsConfig: {
                         if (tabId === 'syllabus-editor') this.renderSyllabusEditorPage();
                         if (tabId === 'sinapsy-ia') this.renderSinapsyIaTab();
                         if (tabId === 'synaptic-map') this.renderSynapticMap();
+                        if (tabId === 'cadernos') this.renderCadernosPage();
                     };
 
                     setActiveTab('planner');
@@ -1140,6 +1175,58 @@ achievementsConfig: {
                             this.handleSyllabusAction(syllabusAction, subjectId, topicId);
                         }
                     });
+
+                    this.el('content-cadernos').addEventListener('click', e => {
+                        const subjectItem = e.target.closest('.subject-item');
+                        const topicItem = e.target.closest('.topic-item');
+                        const focusBtn = e.target.closest('#toggle-focus-mode-btn');
+
+                        if (subjectItem) {
+                            const subjectId = subjectItem.dataset.subjectId;
+                            document.querySelectorAll('#cadernos-subjects-panel .subject-item').forEach(el => el.classList.remove('active'));
+                            subjectItem.classList.add('active');
+                            this.renderCadernoViewer(subjectId);
+                        }
+
+                        if (topicItem) {
+                            const topicId = topicItem.dataset.topicId;
+                            const subjectId = this.el('cadernos-main-panel').dataset.activeSubjectId;
+                            const topic = this.findTopic(subjectId, topicId);
+                            if (topic) {
+                                document.querySelectorAll('#cadernos-topics-list .topic-item').forEach(el => el.classList.remove('active'));
+                                topicItem.classList.add('active');
+
+                                const viewer = this.el('caderno-viewer');
+                                viewer.dataset.activeTopicId = topicId;
+                                viewer.querySelector('h4').textContent = this.getTopicText(topic);
+                                viewer.querySelector('#caderno-notes-textarea').value = topic.notes || '';
+                            }
+                        }
+
+                        if (focusBtn) {
+                            this.el('content-cadernos').classList.toggle('cadernos-focus-mode');
+                            this.el('app-container').classList.toggle('sidebar-collapsed'); // Also collapse main sidebar
+                            const isFocus = this.el('content-cadernos').classList.contains('cadernos-focus-mode');
+                            focusBtn.innerHTML = isFocus
+                                ? `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5"></path></svg>`
+                                : `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg>`;
+                        }
+                    });
+
+                    this.el('content-cadernos').addEventListener('blur', (e) => {
+                        if (e.target.id === 'caderno-notes-textarea') {
+                            const viewer = this.el('caderno-viewer');
+                            const topicId = viewer.dataset.activeTopicId;
+                            const subjectId = this.el('cadernos-main-panel').dataset.activeSubjectId;
+                            if (topicId && subjectId) {
+                                const topic = this.findTopic(subjectId, topicId);
+                                if (topic) {
+                                    topic.notes = e.target.value;
+                                    this.saveData();
+                                }
+                            }
+                        }
+                    }, true);
                     
                     this.modalContainer.addEventListener('click', (e) => {
                         const actionTarget = e.target.closest('[data-action]');
@@ -2294,6 +2381,108 @@ achievementsConfig: {
                         </div>
                     `;
                     console.log("Renderizando o esqueleto do Mapa Sináptico...");
+                },
+
+                renderCadernosPage() {
+                    const container = this.el('content-cadernos');
+                    if (!container) return;
+
+                    container.innerHTML = `
+                        <div class="flex-grow flex overflow-hidden">
+                            <!-- Painel Esquerdo: Matérias -->
+                            <div id="cadernos-subjects-panel" class="w-1/3 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 overflow-y-auto">
+                                <!-- As matérias serão renderizadas aqui -->
+                            </div>
+
+                            <!-- Painel Direito: Editor Principal -->
+                            <div id="cadernos-main-panel" class="w-2/3 flex flex-col bg-gray-50 dark:bg-slate-900">
+                                <!-- O visualizador do caderno será renderizado aqui -->
+                            </div>
+                        </div>
+                    `;
+
+                    this.renderCadernosSubjects();
+                    this.renderCadernoViewer();
+                },
+
+                renderCadernosSubjects() {
+                    const container = this.el('cadernos-subjects-panel');
+                    if (!this.data || !this.data.subjects) {
+                        container.innerHTML = '<p class="p-4 text-gray-500">Nenhuma matéria encontrada.</p>';
+                        return;
+                    }
+
+                    const sortedSubjects = [...this.data.subjects].sort((a, b) => a.orderIndex - b.orderIndex);
+
+                    if (sortedSubjects.length === 0) {
+                        container.innerHTML = '<p class="p-4 text-gray-500">Nenhuma matéria encontrada.</p>';
+                        return;
+                    }
+
+                    container.innerHTML = `
+                        <div class="p-2">
+                            <h3 class="text-lg font-semibold p-3 text-gray-800 dark:text-gray-100">Cadernos</h3>
+                            <ul class="space-y-1">
+                                ${sortedSubjects.map(subject => `
+                                    <li>
+                                        <a href="#" class="subject-item block p-3 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700" data-subject-id="${subject.id}">
+                                            ${subject.name}
+                                        </a>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                },
+
+                renderCadernoViewer(subjectId = null) {
+                    const container = this.el('cadernos-main-panel');
+                    if (!container) return;
+
+                    container.dataset.activeSubjectId = subjectId || '';
+
+                    if (!subjectId) {
+                        container.innerHTML = `
+                            <div class="flex-grow flex items-center justify-center">
+                                <p class="text-gray-500 dark:text-gray-400">Selecione um caderno à esquerda para começar.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    const subject = this.data.subjects.find(s => s.id === subjectId);
+                    if (!subject || !subject.topics || subject.topics.length === 0) {
+                        container.innerHTML = `
+                            <div class="flex-grow flex items-center justify-center">
+                                <p class="text-gray-500 dark:text-gray-400">Este caderno não possui tópicos.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    const sortedTopics = [...subject.topics].sort((a, b) => a.orderIndex - b.orderIndex);
+
+                    container.innerHTML = `
+                        <!-- Lista de Tópicos -->
+                        <div id="cadernos-topics-list" class="flex-shrink-0 h-1/3 overflow-y-auto border-b border-gray-200 dark:border-slate-700">
+                             ${sortedTopics.map(topic => `
+                                <div class="topic-item p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 border-b border-gray-200 dark:border-slate-800" data-topic-id="${topic.id}">
+                                    <p class="font-medium text-gray-800 dark:text-gray-200">${this.getTopicText(topic)}</p>
+                                </div>
+                             `).join('')}
+                        </div>
+
+                        <!-- Área de Anotações -->
+                        <div id="caderno-viewer" class="flex-grow flex flex-col p-4 overflow-y-auto" data-active-topic-id="">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="text-xl font-bold text-gray-800 dark:text-gray-100">Selecione um tópico...</h4>
+                                <button id="toggle-focus-mode-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700" title="Modo Foco">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5"></path></svg>
+                                </button>
+                            </div>
+                            <textarea id="caderno-notes-textarea" class="flex-grow w-full p-3 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg resize-none" placeholder="As anotações do tópico selecionado aparecerão aqui..."></textarea>
+                        </div>
+                    `;
                 },
 
                 renderAll() {
