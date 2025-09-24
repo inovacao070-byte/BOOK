@@ -115,7 +115,6 @@
 
         #content-cadernos.focus-mode #cadernos-editor-panel {
             width: 100%; /* O painel do editor ocupa toda a largura */
-            height: 100%; /* E toda a altura disponível */
         }
         #cadernos-dropdown-menu {
             position: absolute;
@@ -2534,7 +2533,7 @@ achievementsConfig: {
                         </div>
 
                         <!-- Área de Anotações (Principal) -->
-                        <div id="cadernos-editor-panel" class="w-2/3 flex flex-col p-4" data-active-subject-id="${subjectId}" data-active-topic-id="${activeTopicId || ''}">
+                        <div id="cadernos-editor-panel" class="w-2/3 flex flex-col p-4 h-full" data-active-subject-id="${subjectId}" data-active-topic-id="${activeTopicId || ''}">
                             ${editorHTML}
                         </div>
                     `;
