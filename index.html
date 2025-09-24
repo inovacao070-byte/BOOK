@@ -369,9 +369,19 @@
     <script type="module">
         // Imports do Tiptap
         import { Editor } from 'https://esm.sh/@tiptap/core';
-        import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
+        import Document from 'https://esm.sh/@tiptap/extension-document';
+        import Paragraph from 'https://esm.sh/@tiptap/extension-paragraph';
+        import Text from 'https://esm.sh/@tiptap/extension-text';
+        import Bold from 'https://esm.sh/@tiptap/extension-bold';
+        import Italic from 'https://esm.sh/@tiptap/extension-italic';
         import Underline from 'https://esm.sh/@tiptap/extension-underline';
+        import Strike from 'https://esm.sh/@tiptap/extension-strike';
+        import Heading from 'https://esm.sh/@tiptap/extension-heading';
+        import BulletList from 'https://esm.sh/@tiptap/extension-bullet-list';
+        import OrderedList from 'https://esm.sh/@tiptap/extension-ordered-list';
+        import ListItem from 'https://esm.sh/@tiptap/extension-list-item';
         import TextAlign from 'https://esm.sh/@tiptap/extension-text-align';
+        import History from 'https://esm.sh/@tiptap/extension-history';
 
         // Imports do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -2587,9 +2597,23 @@ achievementsConfig: {
                     const editor = new Editor({
                         element: editorElement,
                         extensions: [
-                            StarterKit,
+                            Document,
+                            Paragraph,
+                            Text,
+                            History,
+                            Bold,
+                            Italic,
                             Underline,
-                            TextAlign.configure({ types: ['heading', 'paragraph'] }),
+                            Strike,
+                            Heading.configure({
+                                levels: [2, 3],
+                            }),
+                            BulletList,
+                            OrderedList,
+                            ListItem,
+                            TextAlign.configure({
+                                types: ['heading', 'paragraph'],
+                            }),
                         ],
                         content: content,
                         onUpdate: ({ editor }) => {
