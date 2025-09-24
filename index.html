@@ -382,6 +382,10 @@
         import ListItem from 'https://esm.sh/@tiptap/extension-list-item';
         import TextAlign from 'https://esm.sh/@tiptap/extension-text-align';
         import History from 'https://esm.sh/@tiptap/extension-history';
+        import { ListKeymap } from 'https://esm.sh/@tiptap/extension-list-keymap';
+        import Dropcursor from 'https://esm.sh/@tiptap/extension-dropcursor';
+        import Gapcursor from 'https://esm.sh/@tiptap/extension-gapcursor';
+        import TrailingNode from 'https://esm.sh/@tiptap/extension-trailing-node';
 
         // Imports do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -2600,7 +2604,7 @@ achievementsConfig: {
                             Document,
                             Paragraph,
                             Text,
-                            History, // <-- ADICIONAR ESTA LINHA AQUI
+                            History,
                             Bold,
                             Italic,
                             Underline,
@@ -2614,6 +2618,11 @@ achievementsConfig: {
                             TextAlign.configure({
                                 types: ['heading', 'paragraph'],
                             }),
+                            // NOVAS EXTENSÕES ESSENCIAIS:
+                            ListKeymap,
+                            Dropcursor,
+                            Gapcursor,
+                            TrailingNode,
                         ],
                         content: content,
                         onUpdate: ({ editor }) => {
