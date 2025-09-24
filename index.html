@@ -252,10 +252,6 @@
                     <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     <span class="text-label group-[.sidebar-collapsed]:hidden">Sinapsy IA</span>
                 </button>
-                <button data-tab-id="synaptic-map" class="sidebar-item w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-base group-[.sidebar-collapsed]:justify-center transition-colors duration-200">
-                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14a2 2 0 100-4 2 2 0 000 4z"></path></svg>
-                    <span class="text-label group-[.sidebar-collapsed]:hidden">Mapa Sináptico</span>
-                </button>
             </nav>
 
             <!-- Sidebar Footer (User Info) -->
@@ -334,7 +330,6 @@
                 <div id="content-dashboard" class="hidden"></div>
                 <div id="content-progress" class="hidden"></div>
                 <div id="content-sinapsy-ia" class="hidden"></div>
-                <div id="content-synaptic-map" class="hidden"></div>
             </div>
         </main>
     </div>
@@ -1186,7 +1181,6 @@ achievementsConfig: {
                         if (tabId === 'progress') this.renderProgressTab();
                         if (tabId === 'syllabus-editor') this.renderSyllabusEditorPage();
                         if (tabId === 'sinapsy-ia') this.renderSinapsyIaTab();
-                        if (tabId === 'synaptic-map') this.renderSynapticMap();
                         if (tabId === 'cadernos') this.renderCadernosPage();
                     };
 
@@ -1958,18 +1952,7 @@ achievementsConfig: {
                     const topicsHTML = sortedTopics.map(topic => this.renderTopicRow(subject, topic, topic.id === openTopicId)).join('');
                     this.renderModal(subject.name, `<div id="topic-list-container" class="divide-y divide-gray-200 dark:divide-slate-700">${topicsHTML}</div>`);
 
-                    // After the modal is rendered, initialize any RTEs inside it
-                    sortedTopics.forEach(topic => {
-                        if (topic.phase === 1) { // Only for topics in construction phase
-                            const rteContainer = this.el(`study-tools-rte-${topic.id}`);
-                            if (rteContainer) {
-                                this.createRichTextEditor(rteContainer, topic.notes, this.debounce((newContent) => {
-                                    topic.notes = newContent;
-                                    this.saveData();
-                                }, 500)); // Debounce saving to avoid too many writes
-                            }
-                        }
-                    });
+                    // RTE initialization is now handled inside renderTopicRow when a topic is expanded.
 
                     if (openTopicId) {
                         const topicElement = this.el(`topic-row-${openTopicId}`);
@@ -1981,43 +1964,6 @@ achievementsConfig: {
                     }
                 },
 
-                getStudyToolsHTML(subjectId, topic) {
-                    return `
-                        <div class="mt-4 space-y-4">
-                            <div>
-                                <div class="flex items-center gap-2">
-                                     <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Seu Resumo / Anotações</h4>
-                                     <div class="tooltip">
-                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                         <span class="tooltiptext">As informações aqui são salvas automaticamente e podem ser consultadas a qualquer momento.</span>
-                                     </div>
-                                     <button data-action="expandNotes" data-subject-id="${subjectId}" data-topic-id="${topic.id}" class="text-gray-400 hover:text-teal-600 dark:text-gray-500 dark:hover:text-teal-400" title="Expandir Anotações">
-                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 1v4m0 0h-4m4 0l-5-5" /></svg>
-                                     </button>
-                                </div>
-                                <div id="study-tools-rte-${topic.id}" class="mt-2 min-h-[250px]"></div>
-                            </div>
-                            <div class="bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Estudo Ativo com IA</h4>
-                                    <div class="tooltip">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        <span class="tooltiptext">Funcionalidade secundária. A IA utilizará exclusivamente o seu resumo como fonte de informação.</span>
-                                     </div>
-                                    <button data-action="editAIConfig" data-subject-id="${subjectId}" data-topic-id="${topic.id}" class="text-gray-400 hover:text-teal-600 dark:text-gray-500 dark:hover:text-teal-400" title="Configurar IA">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                    </button>
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    <button data-action="generateQuestions" data-subject-id="${subjectId}" data-topic-id="${topic.id}" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/50 dark:hover:bg-blue-900 dark:text-blue-300 px-3 py-1 rounded-md flex items-center">Gerar Questões</button>
-                                    <button data-action="generateFlashcards" data-subject-id="${subjectId}" data-topic-id="${topic.id}" class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/50 dark:hover:bg-purple-900 dark:text-purple-300 px-3 py-1 rounded-md flex items-center">Gerar Flashcards</button>
-                                    <button data-action="deepenExplanation" data-subject-id="${subjectId}" data-topic-id="${topic.id}" class="text-xs bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/50 dark:hover:bg-green-900 dark:text-green-300 px-3 py-1 rounded-md flex items-center">Aprofundar</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                },
-
                 renderTopicRow(subject, topic, shouldOpen = false) {
                     if (!topic) return '';
                     const phase = this.phasesData[topic.phase];
@@ -2025,52 +1971,53 @@ achievementsConfig: {
                     let controls = '';
 
                     switch (topic.phase) {
-                        case 0: 
+                        case 0:
                             controls = `<div class="p-4 space-y-3">
-                                        <p class="text-sm text-center text-gray-700 dark:text-gray-300 font-medium">Você já possui um material de estudo consolidado (resumo, anotações, etc) sobre este tópico?</p>
-                                        <div class="flex justify-center gap-4">
-                                            <button data-action="setNeedsMaterial" data-subject-id="${subject.id}" data-topic-id="${topic.id}" class="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/50 dark:hover:bg-blue-900 dark:text-blue-300 px-4 py-2 rounded-md">Não, preciso construir</button>
-                                            <button data-action="setHasMaterial" data-subject-id="${subject.id}" data-topic-id="${topic.id}" class="text-sm bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/50 dark:hover:bg-green-900 dark:text-green-300 px-4 py-2 rounded-md">Sim, já tenho material</button>
-                                        </div>
-                                    </div>`; 
+                <p class="text-sm text-center text-gray-700 dark:text-gray-300 font-medium">Você já possui um material de estudo consolidado (resumo, anotações, etc) sobre este tópico?</p>
+                <div class="flex justify-center gap-4">
+                    <button data-action="setNeedsMaterial" data-subject-id="${subject.id}" data-topic-id="${topic.id}" class="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/50 dark:hover:bg-blue-900 dark:text-blue-300 px-4 py-2 rounded-md">Não, preciso construir</button>
+                    <button data-action="setHasMaterial" data-subject-id="${subject.id}" data-topic-id="${topic.id}" class="text-sm bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/50 dark:hover:bg-green-900 dark:text-green-300 px-4 py-2 rounded-md">Sim, já tenho material</button>
+                </div>
+            </div>`;
                             break;
-                        case 1: 
+                        case 1:
+                            // AGORA USAMOS O NOVO EDITOR AQUI
                             controls = `<div class="p-4 space-y-3">
-                                        <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Sua Missão:</strong> Estude o tópico e crie seu material de apoio (resumo/mapa) na área de anotações abaixo.</p>
-                                        ${this.getStudyToolsHTML(subject.id, topic)}
-                                        <div class="mt-4 pl-10">
-                                            <label class="flex items-center text-sm cursor-pointer font-semibold text-[#3B3A82] dark:text-[#5DBCD2]">
-                                                <input type="checkbox" data-action="completeConstruction" data-subject-id="${subject.id}" data-topic-id="${topic.id}" ${topic.taskStatus?.mapReady ? 'checked' : ''} class="mr-2 h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-[#3B3A82] focus:ring-[#5DBCD2] dark:bg-slate-700 dark:focus:ring-offset-slate-800">
-                                                Material de estudo pronto!
-                                            </label>
-                                        </div>
-                                    </div>`; 
+                <p class="text-sm text-gray-700 dark:text-gray-300"><strong>Sua Missão:</strong> Estude o tópico e crie seu material de apoio (resumo/mapa) na área de anotações abaixo.</p>
+                <div id="study-tools-rte-${topic.id}" class="mt-2 min-h-[250px]"></div>
+                <div class="mt-4 pl-10">
+                    <label class="flex items-center text-sm cursor-pointer font-semibold text-[#3B3A82] dark:text-[#5DBCD2]">
+                        <input type="checkbox" data-action="completeConstruction" data-subject-id="${subject.id}" data-topic-id="${topic.id}" ${topic.taskStatus?.mapReady ? 'checked' : ''} class="mr-2 h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-[#3B3A82] focus:ring-[#5DBCD2] dark:bg-slate-700 dark:focus:ring-offset-slate-800">
+                        Material de estudo pronto!
+                    </label>
+                </div>
+            </div>`;
                             break;
                         default: // Fases 2, 3, 4, 5
-                                controls = `<div class="p-4">
-                                         <p class="text-sm text-center text-gray-500 dark:text-gray-400">Acesse o <button data-action="goToPlanner" class="font-semibold text-[#3B3A82] hover:underline dark:text-[#5DBCD2] dark:hover:text-[#63D2E5]">Planejador</button> para realizar a próxima revisão deste tópico.</p>
-                                    </div>`;
+                            controls = `<div class="p-4">
+                <p class="text-sm text-center text-gray-500 dark:text-gray-400">Acesse o <button data-action="goToPlanner" class="font-semibold text-[#3B3A82] hover:underline dark:text-[#5DBCD2] dark:hover:text-[#63D2E5]">Planejador</button> para realizar a próxima revisão deste tópico.</p>
+            </div>`;
                             break;
                     }
                     const nextReviewText = topic.nextReviewDate ? `<span class="text-xs text-gray-500 dark:text-gray-400">Próxima revisão ${dayjs(topic.nextReviewDate).fromNow()}</span>` : '';
-                    
+
                     return `
-                        <details id="topic-row-${topic.id}" class="group" ${shouldOpen ? 'open' : ''}>
-                            <summary class="topic-row p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50">
-                                <div class="flex items-center gap-3">
-                                    ${this.renderICSIndicatorHTML(topic.ics)}
-                                    <div class="flex-1">
-                                        <p class="text-sm text-gray-800 dark:text-gray-100">${this.getTopicText(topic)}</p>
-                                        ${nextReviewText}
-                                    </div>
-                                    <span title="${phase.name}" class="text-xs font-semibold px-2 py-1 ${phase.color} text-white rounded-full cursor-pointer">${phase.name}</span>
-                                    <svg class="w-5 h-5 text-gray-400 group-open:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                </div>
-                            </summary>
-                            <div class="py-2 bg-gray-50/50 dark:bg-slate-900/50 border-t border-gray-200 dark:border-slate-700">
-                               ${controls}
-                            </div>
-                        </details>`;
+        <details id="topic-row-${topic.id}" class="group" ${shouldOpen ? 'open' : ''}>
+            <summary class="topic-row p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50">
+                <div class="flex items-center gap-3">
+                    ${this.renderICSIndicatorHTML(topic.ics)}
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-800 dark:text-gray-100">${this.getTopicText(topic)}</p>
+                        ${nextReviewText}
+                    </div>
+                    <span title="${phase.name}" class="text-xs font-semibold px-2 py-1 ${phase.color} text-white rounded-full cursor-pointer">${phase.name}</span>
+                    <svg class="w-5 h-5 text-gray-400 group-open:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+            </summary>
+            <div class="py-2 bg-gray-50/50 dark:bg-slate-900/50 border-t border-gray-200 dark:border-slate-700">
+               ${controls}
+            </div>
+        </details>`;
                 },
 
                 renderModal(title, content, footer = '', modalId = '') {
@@ -2447,22 +2394,6 @@ achievementsConfig: {
                     };
                 },
 
-                renderSynapticMap() {
-                    const container = this.el('content-synaptic-map');
-                    if (!container) return;
-
-                    // Conteúdo temporário da Fase 2
-                    container.innerHTML = `
-                        <div class="h-full flex flex-col">
-                            <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-6">Mapa Sináptico</h2>
-                            <div class="flex-grow bg-gray-100 dark:bg-slate-800 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-slate-700">
-                                <p class="text-gray-500 dark:text-gray-400">A visualização do Mapa Sináptico (Fase 3) será implementada aqui.</p>
-                            </div>
-                        </div>
-                    `;
-                    console.log("Renderizando o esqueleto do Mapa Sináptico...");
-                },
-
                 renderCadernosPage() {
                     const container = this.el('content-cadernos');
                     if (!container) return;
@@ -2612,42 +2543,47 @@ achievementsConfig: {
                 },
 
                 createRichTextEditor(targetElement, initialContent, onUpdateCallback) {
-                    // 1. Backward Compatibility Check (sem alterações)
+                    // 1. Backward Compatibility Check
                     let content = initialContent || '';
                     if (content && !content.trim().startsWith('<')) {
-                        content = `<p>${content.replace(/\n/g, '<br>')}</p>`;
+                        content = `<p>${content.replace(/\n/g, '</p><p>')}</p>`;
                     }
 
-                    // 2. Toolbar HTML (sem alterações)
+                    // 2. Toolbar HTML
                     const toolbarHTML = `
                         <div class="tiptap-toolbar">
-                            <button data-command="toggleBold"><b>B</b></button>
-                            <button data-command="toggleItalic"><i>I</i></button>
-                            <button data-command="toggleUnderline"><u>U</u></button>
-                            <button data-command="toggleHeading" data-level="2">H2</button>
-                            <button data-command="toggleHeading" data-level="3">H3</button>
-                            <button data-command="toggleBulletList">●</button>
-                            <button data-command="toggleOrderedList">1.</button>
-                            <button data-command="setTextAlign" data-align="left">Left</button>
-                            <button data-command="setTextAlign" data-align="center">Center</button>
-                            <button data-command="setTextAlign" data-align="right">Right</button>
+                            <button data-command="toggleBold" title="Negrito"><b>B</b></button>
+                            <button data-command="toggleItalic" title="Itálico"><i>I</i></button>
+                            <button data-command="toggleUnderline" title="Sublinhado"><u>U</u></button>
+                            <button data-command="toggleStrike" title="Riscado"><s>S</s></button>
+                            <span class="toolbar-separator"></span>
+                            <button data-command="toggleHeading" data-level="2" title="Título 2">H2</button>
+                            <button data-command="toggleHeading" data-level="3" title="Título 3">H3</button>
+                            <button data-command="setParagraph" title="Parágrafo">P</button>
+                             <span class="toolbar-separator"></span>
+                            <button data-command="toggleBulletList" title="Lista (bullet)">●</button>
+                            <button data-command="toggleOrderedList" title="Lista (numerada)">1.</button>
+                             <span class="toolbar-separator"></span>
+                            <button data-command="setTextAlign" data-align="left" title="Alinhar à Esquerda">Left</button>
+                            <button data-command="setTextAlign" data-align="center" title="Centralizar">Center</button>
+                            <button data-command="setTextAlign" data-align="right" title="Alinhar à Direita">Right</button>
                         </div>
                     `;
 
-                    // 3. Create Editor Container (sem alterações)
+                    // 3. Create Editor Container
                     const editorContainer = document.createElement('div');
                     editorContainer.className = 'tiptap-editor-wrapper flex flex-col h-full border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden';
 
                     const editorElement = document.createElement('div');
-                    editorElement.className = 'flex-grow overflow-y-auto p-2 tiptap'; // Adicionada classe .tiptap aqui
+                    editorElement.className = 'flex-grow overflow-y-auto p-3 tiptap';
 
                     editorContainer.innerHTML = toolbarHTML;
                     editorContainer.appendChild(editorElement);
 
-                    targetElement.innerHTML = ''; // Limpa o container antes de adicionar o editor
+                    targetElement.innerHTML = '';
                     targetElement.appendChild(editorContainer);
 
-                    // 4. Initialize Tiptap Editor (sem alterações)
+                    // 4. Initialize Tiptap Editor
                     const editor = new Editor({
                         element: editorElement,
                         extensions: [
@@ -2657,12 +2593,11 @@ achievementsConfig: {
                         ],
                         content: content,
                         onUpdate: ({ editor }) => {
-                            // Usar um debounce para evitar salvar a cada tecla digitada
                             this.debounce(() => onUpdateCallback(editor.getHTML()), 500)();
                         }
                     });
 
-                    // 5. Toolbar Event Listeners (LÓGICA CORRIGIDA E CENTRALIZADA)
+                    // 5. Toolbar Event Listeners
                     const toolbar = editorContainer.querySelector('.tiptap-toolbar');
                     toolbar.addEventListener('click', (e) => {
                         const button = e.target.closest('button');
@@ -2672,44 +2607,37 @@ achievementsConfig: {
                         const { command, level, align } = button.dataset;
                         const editorChain = editor.chain().focus();
 
-                        switch (command) {
-                            case 'toggleBold':
-                                editorChain.toggleBold().run();
-                                break;
-                            case 'toggleItalic':
-                                editorChain.toggleItalic().run();
-                                break;
-                            case 'toggleUnderline':
-                                editorChain.toggleUnderline().run();
-                                break;
-                            case 'toggleHeading':
-                                editorChain.toggleHeading({ level: parseInt(level, 10) }).run();
-                                break;
-                            case 'toggleBulletList':
-                                editorChain.toggleBulletList().run();
-                                break;
-                            case 'toggleOrderedList':
-                                editorChain.toggleOrderedList().run();
-                                break;
-                            case 'setTextAlign':
-                                editorChain.setTextAlign(align).run();
-                                break;
+                        const commands = {
+                            toggleBold: () => editorChain.toggleBold().run(),
+                            toggleItalic: () => editorChain.toggleItalic().run(),
+                            toggleUnderline: () => editorChain.toggleUnderline().run(),
+                            toggleStrike: () => editorChain.toggleStrike().run(),
+                            setParagraph: () => editorChain.setParagraph().run(),
+                            toggleHeading: () => editorChain.toggleHeading({ level: parseInt(level, 10) }).run(),
+                            toggleBulletList: () => editorChain.toggleBulletList().run(),
+                            toggleOrderedList: () => editorChain.toggleOrderedList().run(),
+                            setTextAlign: () => editorChain.setTextAlign(align).run(),
+                        };
+
+                        if (commands[command]) {
+                            commands[command]();
                         }
                     });
 
-                    // 6. Update toolbar state on selection change (LÓGICA COMPLETA)
+                    // 6. Update toolbar state on selection change
                     const updateToolbar = () => {
                         toolbar.querySelectorAll('button').forEach(button => {
                             const { command, level, align } = button.dataset;
                             let isActive = false;
-                            switch (command) {
-                                case 'toggleBold': isActive = editor.isActive('bold'); break;
-                                case 'toggleItalic': isActive = editor.isActive('italic'); break;
-                                case 'toggleUnderline': isActive = editor.isActive('underline'); break;
-                                case 'toggleHeading': isActive = editor.isActive('heading', { level: parseInt(level, 10) }); break;
-                                case 'toggleBulletList': isActive = editor.isActive('bulletList'); break;
-                                case 'toggleOrderedList': isActive = editor.isActive('orderedList'); break;
-                                case 'setTextAlign': isActive = editor.isActive({ textAlign: align }); break;
+                            if (command === 'toggleHeading') {
+                                isActive = editor.isActive('heading', { level: parseInt(level, 10) });
+                            } else if (command === 'setTextAlign') {
+                                isActive = editor.isActive({ textAlign: align });
+                            } else if(command === 'setParagraph') {
+                                isActive = editor.isActive('paragraph');
+                            }
+                            else {
+                                isActive = editor.isActive(command.replace('toggle', '').toLowerCase());
                             }
                             button.classList.toggle('is-active', isActive);
                         });
@@ -3193,10 +3121,10 @@ renderTopicAtomModal(subjectId, topicId) {
     if (historyContainer) {
             const rteContainer = this.el(`topic-atom-rte-${topic.id}`);
             if (rteContainer) {
-                this.createRichTextEditor(rteContainer, topic.notes, this.debounce((newContent) => {
+                this.createRichTextEditor(rteContainer, topic.notes, (newContent) => {
                     topic.notes = newContent;
                     this.saveData();
-                }, 500));
+                });
             }
 
         const phaseHistoryHTML = this.phasesData.map((phaseData, index) => {
